@@ -24,4 +24,26 @@ contract SignatureTest is Test {
         signature.setNumberWithSignature(number, _signature);
         assertEq(signature.number(), number);
     }
+    function test_setNumberWithSignatureEIP191() public {
+        uint256 number = 10;
+
+        bytes1 prefix = bytes1(0x19);
+        bytes1 eip191Version = bytes1(0);
+        address indendedValidatorAddress = address(signature);
+        bytes32 applicationSpecificData = keccak256(abi.encodePacked(number));
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                prefix,
+                eip191Version,
+                indendedValidatorAddress,
+                applicationSpecificData
+            )
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, messageHash);
+        bytes memory _signature = abi.encodePacked(r, s, v);
+        //increment
+        signature.setNumberWithSignatureEIP191(number, _signature);
+        assertEq(signature.number(), number);
+    }
 }

@@ -9,15 +9,53 @@ contract Signature {
         owner = _owner;
     }
 
+    // Normal function without EIP's
     function setNumberWithSignature(
         uint256 _number,
         bytes calldata signature
     ) public {
         bytes32 messageHash = keccak256(abi.encodePacked(_number));
-        console.logBytes32(messageHash);
         address signer = recoverSigner(messageHash, signature);
         require(signer == owner, "Invalid signature");
+        // Increment nonce to prevent replay attacks
+
         number = _number;
+    }
+
+    // Use EIP-191 version 0x00 to format the data
+    function setNumberWithSignatureEIP191(
+        uint256 _number,
+        bytes calldata signature
+    ) public {
+        bytes32 messageHash = getMessageHash(_number);
+        address signer = recoverSigner(messageHash, signature);
+        require(signer == owner, "Invalid signature");
+        // Increment nonce to prevent replay attacks
+
+        number = _number;
+    }
+
+    /**
+     * @dev Returns the prefixed hash of the message, adding ERC-191 compliance.
+     */
+    function getMessageHash(uint256 newNumber) public view returns (bytes32) {
+        bytes1 prefix = bytes1(0x19);
+        bytes1 eip191Version = bytes1(0);
+        address indendedValidatorAddress = address(this);
+        bytes32 applicationSpecificData = keccak256(
+            abi.encodePacked(newNumber)
+        );
+
+        // Apply the ERC-191 prefix
+        return
+            keccak256(
+                abi.encodePacked(
+                    prefix,
+                    eip191Version,
+                    indendedValidatorAddress,
+                    applicationSpecificData
+                )
+            );
     }
 
     /**
